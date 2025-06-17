@@ -1,67 +1,62 @@
+// Можно просто обновить targetScroll, чтобы кнопка тоже работала через наш механизм
+document.getElementById('scrollDownBtn').addEventListener('click', function() {
+  targetScroll += 800;
+  targetScroll = Math.max(0, Math.min(targetScroll, document.documentElement.scrollHeight - window.innerHeight));
+  if (!animationFrameId) {
+    animate();
+  }
+});
+
+// document.getElementById('scrollDownBtn').addEventListener('click', function() {
+
+// window.scrollBy({ top: 800, behavior: 'smooth' });
+// });
+
 let targetScroll = window.scrollY;
 let currentScroll = window.scrollY;
 let velocity = 0;
 let animationFrameId = null;
 
 // Параметры
-const smoothness = 0.01; // влияет на плавность
-const maxSpeed = 50; // максимум скорости
+const smoothness = 0.01; // чем меньше, тем плавнее, но медленнее реагирует
+const maxSpeed = 50; // максимум скорости в px за кадр
 
-// Обработчик колесика
 window.addEventListener('wheel', function(e) {
   e.preventDefault();
 
   // Обновляем целевую позицию
   targetScroll += e.deltaY;
-  const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
-  targetScroll = Math.max(0, Math.min(targetScroll, maxScroll));
+  targetScroll = Math.max(0, Math.min(targetScroll, document.documentElement.scrollHeight - window.innerHeight));
 
+  // Запускаем плавное движение
   if (!animationFrameId) {
-    // Перед стартом анимации синхронизируем targetScroll с текущим положением
-    targetScroll = window.scrollY;
     animate();
   }
 }, { passive: false });
 
-// Обработчик кнопки
-document.getElementById('scrollDownBtn').addEventListener('click', function() {
-  // Перед стартом анимации синхронизируем targetScroll с текущим положением
-  targetScroll = window.scrollY;
-
-  targetScroll += 800; // добавляем прокрутку
-  const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
-  targetScroll = Math.max(0, Math.min(targetScroll, maxScroll));
-
-  if (!animationFrameId) {
-    animate();
-  }
-});
-
 function animate() {
-  // Обновляем текущий скролл
-  const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
-
+  // Расчет разницы
   const delta = targetScroll - currentScroll;
 
-  // Обновляем скорость
+  // Обновляем скорость с учетом разницы
   velocity += delta * smoothness;
+  // Ограничиваем скорость
   velocity = Math.max(-maxSpeed, Math.min(maxSpeed, velocity));
 
+  // Обновляем текущую позицию
   currentScroll += velocity;
 
-  // Ограничиваем текущий скролл в пределах
-  if (currentScroll < 0) currentScroll = 0;
-  if (currentScroll > maxScroll) currentScroll = maxScroll;
-
+  // Переходим к новой позиции
   window.scrollTo(0, currentScroll);
 
-  // Демпфирование скорости
-  velocity *= 0.8;
+  // Замедляем скорость (эффект инерции)
+  velocity *= 0.8; // демпфирование
 
-  // Продолжаем анимацию, если есть необходимость
+  // Проверяем, нужно ли продолжать анимацию
   if (Math.abs(delta) > 0.5 || Math.abs(velocity) > 0.5) {
     animationFrameId = requestAnimationFrame(animate);
   } else {
+    // Останавливаем анимацию, если достаточно близко
     cancelAnimationFrame(animationFrameId);
     animationFrameId = null;
   }
